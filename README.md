@@ -27,10 +27,26 @@ Remplace la requête `https://hydracker.com/api/v1/content/liens/{id}` par `http
 
 ## Installation (mode développeur)
 
+Le repo contient deux versions :
+
+- `chrome/` — Chrome / Brave / Edge / Opera / Vivaldi (Chromium)
+- `firefox/` — Firefox 128+
+
+### Chrome / Chromium
+
 1. Clone ou télécharge ce repo.
 2. Ouvre `chrome://extensions` et active **Mode développeur** (en haut à droite).
-3. Clique **Charger l'extension non empaquetée** → sélectionne le dossier `HydraFreecker`.
+3. Clique **Charger l'extension non empaquetée** → sélectionne le dossier `chrome/`.
 4. Va sur `https://hydracker.com`, ouvre un titre, clique sur l'icône d'un hébergeur.
+
+### Firefox
+
+1. Clone ou télécharge ce repo.
+2. Ouvre `about:debugging#/runtime/this-firefox`.
+3. Clique **Charger un module complémentaire temporaire…** → sélectionne le fichier `firefox/manifest.json`.
+4. Va sur `https://hydracker.com`, ouvre un titre, clique sur l'icône d'un hébergeur.
+
+> Firefox 128+ requis (pour `world: "MAIN"` dans les content scripts). En mode dev, l'extension est retirée à chaque redémarrage du navigateur — pour un install permanent, signer le `.xpi` via [addons.mozilla.org](https://addons.mozilla.org).
 
 L'extension n'a pas de popup ni de page d'options — elle tourne en arrière-plan.
 
@@ -65,15 +81,26 @@ L'extension n'a pas de popup ni de page d'options — elle tourne en arrière-pl
 [ utilisateur clique Télécharger → lien direct ouvert dans nouvel onglet ]
 ```
 
-## Structure des fichiers
+## Structure du repo
+
+```
+HydraFreecker/
+├── chrome/          # build Chromium (Chrome, Brave, Edge…)
+├── firefox/         # build Firefox 128+
+├── README.md        # ce fichier (FR)
+├── README.en.md     # version anglaise
+└── LICENSE          # MIT
+```
+
+Chaque dossier `chrome/` et `firefox/` contient les mêmes fichiers, seul `manifest.json` diffère.
 
 | Fichier           | Rôle                                                                                  |
 | ----------------- | ------------------------------------------------------------------------------------- |
-| `manifest.json`   | Manifest MV3. Permission : `declarativeNetRequest`. Hôtes : hydracker.com, api.movix.tax. |
+| `manifest.json`   | Manifest MV3 (Chromium ou Gecko). Permission : `declarativeNetRequest`.                |
 | `rules.json`      | Règle declarativeNetRequest — réécrit `Referer`/`Origin` sur les appels Movix API.    |
 | `interceptor.js`  | Tourne en MAIN world. Patch `fetch` + `XMLHttpRequest` pour intercepter l'endpoint lien Hydracker. |
 | `content.js`      | Tourne en ISOLATED world. UI du modal, watcher du dialog site, pont de messages.      |
-| `background.js`   | Service worker. Effectue le fetch cross-origin vers Movix.                            |
+| `background.js`   | Service worker (Chrome) / event page script (Firefox). Effectue le fetch cross-origin vers Movix. |
 | `modal.css`       | Modal style shadcn, animations, pills, badges drapeau, icônes.                        |
 | `icons/`          | Icônes extension (16/32/48/128 PNG) + SVG source.                                     |
 

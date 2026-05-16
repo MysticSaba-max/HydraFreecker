@@ -1,0 +1,13 @@
+# Chrome / Chromium extension cache generated at load-unpacked time
+_metadata/
+**/_metadata/
+
+# Firefox temporary build artifacts
+web-ext-artifacts/
+*.xpi
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

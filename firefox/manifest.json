@@ -1,0 +1,51 @@
+{
+  "manifest_version": 3,
+  "name": "HydraFreecker",
+  "version": "1.0.0",
+  "description": "Remplace le débridage Hydracker par l'API Movix.",
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{f5e8d2a0-1b3c-4e6f-9a7b-2c4d5e8f1a3b}",
+      "strict_min_version": "128.0"
+    }
+  },
+  "permissions": ["declarativeNetRequest", "declarativeNetRequestWithHostAccess"],
+  "host_permissions": [
+    "https://hydracker.com/*",
+    "https://api.movix.tax/*"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://hydracker.com/*"],
+      "js": ["interceptor.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": false
+    },
+    {
+      "matches": ["https://hydracker.com/*"],
+      "js": ["content.js"],
+      "css": ["modal.css"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  }
+}

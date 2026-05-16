@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <rect x="0" y="0" width="128" height="128" rx="28" ry="28" fill="#000000"/>
+  <text x="64" y="64"
+        text-anchor="middle"
+        dominant-baseline="central"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif"
+        font-weight="900"
+        font-size="62"
+        letter-spacing="-3"
+        fill="#ffffff">HF</text>
+</svg>

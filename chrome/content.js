@@ -28,23 +28,45 @@
   const SITE_DIALOG_TITLES = [
     'Téléchargement Premium',
     'Téléchargement premium',
-    'Premium Download'
+    'Premium Download',
+    'Télécharger',
+    'Download'
   ];
 
   let siteDialogObserver = null;
 
+  function isHydrackerDialog(el) {
+    if (!el || el.id === MODAL_ID || el.closest('#' + MODAL_ID)) return false;
+    const cls = typeof el.className === 'string' ? el.className : '';
+    if (/(?:max-w-dialog|max-h-dialog|be-dialog)/.test(cls)) return true;
+    if (el.matches('[class*="max-w-dialog"], [class*="max-h-dialog"]')) return true;
+    const heading = el.querySelector('h1, h2, h3, [id$="-label"]');
+    const headingText = heading ? (heading.textContent || '').trim() : '';
+    if (SITE_DIALOG_TITLES.some((t) => headingText === t || headingText.includes(t))) return true;
+    if (el.querySelector('.skeleton[aria-busy="true"]')) return true;
+    return false;
+  }
+
   function killSiteDialog(root = document) {
     const dialogs = root.querySelectorAll('[role="dialog"]');
     dialogs.forEach((d) => {
-      if (d.id === MODAL_ID || d.closest('#' + MODAL_ID)) return;
-      const txt = d.textContent || '';
-      const match = SITE_DIALOG_TITLES.some((t) => txt.includes(t));
-      if (!match) return;
+      if (!isHydrackerDialog(d)) return;
       const overlay =
         d.closest('.fixed.inset-0') ||
         d.closest('[class*="z-modal"]') ||
-        d.parentElement;
-      (overlay || d).remove();
+        d.closest('[role="presentation"]') ||
+        d;
+      if (
+        !overlay ||
+        overlay === document.body ||
+        overlay === document.documentElement ||
+        overlay.tagName === 'BODY' ||
+        overlay.tagName === 'HTML'
+      ) {
+        d.remove();
+        return;
+      }
+      overlay.remove();
     });
   }
 

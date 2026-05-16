@@ -27,10 +27,26 @@ Replaces the `https://hydracker.com/api/v1/content/liens/{id}` request with `htt
 
 ## Install (developer mode)
 
+The repo ships two builds:
+
+- `chrome/` — Chrome / Brave / Edge / Opera / Vivaldi (Chromium)
+- `firefox/` — Firefox 128+
+
+### Chrome / Chromium
+
 1. Clone or download this repo.
 2. Open `chrome://extensions` and enable **Developer mode** (top-right).
-3. Click **Load unpacked** → select the `HydraFreecker` folder.
+3. Click **Load unpacked** → select the `chrome/` folder.
 4. Visit `https://hydracker.com`, open any title, click a download host icon.
+
+### Firefox
+
+1. Clone or download this repo.
+2. Open `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on…** → select the `firefox/manifest.json` file.
+4. Visit `https://hydracker.com`, open any title, click a download host icon.
+
+> Firefox 128+ required (for `world: "MAIN"` content scripts). Temporary add-ons are unloaded on browser restart — for a permanent install, sign the `.xpi` via [addons.mozilla.org](https://addons.mozilla.org).
 
 The extension exposes no popup/options page — it just works in the background.
 
@@ -65,15 +81,26 @@ The extension exposes no popup/options page — it just works in the background.
 [ user clicks Télécharger → opens direct URL in new tab ]
 ```
 
-## File structure
+## Repo structure
+
+```
+HydraFreecker/
+├── chrome/          # Chromium build (Chrome, Brave, Edge…)
+├── firefox/         # Firefox 128+ build
+├── README.md        # French README
+├── README.en.md     # this file
+└── LICENSE          # MIT
+```
+
+`chrome/` and `firefox/` ship identical sources; only `manifest.json` differs.
 
 | File              | Role                                                                                  |
 | ----------------- | ------------------------------------------------------------------------------------- |
-| `manifest.json`   | MV3 manifest. Permissions: `declarativeNetRequest`. Hosts: hydracker.com, api.movix.tax. |
+| `manifest.json`   | MV3 manifest (Chromium or Gecko flavor). Permission: `declarativeNetRequest`.          |
 | `rules.json`      | declarativeNetRequest rule — rewrites `Referer`/`Origin` on Movix API calls.          |
 | `interceptor.js`  | Runs in MAIN world. Patches `fetch` + `XMLHttpRequest` to intercept Hydracker's lien endpoint. |
 | `content.js`      | Runs in ISOLATED world. Modal UI, site-dialog watcher, message bridge.                |
-| `background.js`   | Service worker. Performs the cross-origin Movix fetch.                                |
+| `background.js`   | Service worker (Chrome) / event page script (Firefox). Performs the cross-origin Movix fetch. |
 | `modal.css`       | shadcn-style dialog, animations, pills, flag badges, icons.                           |
 | `icons/`          | Extension icons (16/32/48/128 PNG) + source SVG.                                      |
 

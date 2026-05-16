@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        { "header": "Referer", "operation": "set", "value": "https://movix.tax/" },
+        { "header": "Origin", "operation": "set", "value": "https://movix.tax" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.movix.tax/api/darkiworld/decode/",
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  }
+]
