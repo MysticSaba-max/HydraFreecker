@@ -1,0 +1,118 @@
+<div align="right">
+
+**🇫🇷 Français** · [🇬🇧 English](README.en.md)
+
+</div>
+
+# HydraFreecker
+
+<img src="icons/128.png" alt="HydraFreecker" width="96" align="right">
+
+> **Hydracker, débridé.** Un clic. Un lien direct. Zéro popup pourri.
+
+Extension Chrome qui intercepte le bouton de téléchargement premium d'Hydracker et résout le lien via l'API Movix à la place. Plug-and-play : même clic, backend différent, modal custom.
+
+Remplace la requête `https://hydracker.com/api/v1/content/liens/{id}` par `https://api.movix.tax/api/darkiworld/decode/{id}?title_id={titleId}`, spoofe `Referer`/`Origin` vers `https://movix.tax`, puis affiche un modal custom avec la réponse.
+
+---
+
+## Fonctionnalités
+
+- **Interception transparente** — fonctionne avec l'UI Hydracker existante, aucun bouton à ajouter.
+- **Spoofing des headers** — `Referer` et `Origin` réécrits via `declarativeNetRequest` pour que l'API Movix accepte la requête.
+- **Modal natif** — thème sombre inspiré shadcn, animations d'ouverture/fermeture, icônes Lucide, boutons copier/ouvrir/télécharger.
+- **Métadonnées riches** — qualité, langues (avec badges drapeau inline custom, pas d'emoji cassé sous Windows), taille, hébergeur (avec favicon), uploader, votes, dates, source/provider, IDs.
+- **Inspecteur de réponse brute** — JSON dépliable avec animation de hauteur fluide.
+- **Tueur de dialog site** — retire automatiquement le dialog "Téléchargement Premium" d'Hydracker pour n'afficher que celui d'HydraFreecker.
+
+## Installation (mode développeur)
+
+1. Clone ou télécharge ce repo.
+2. Ouvre `chrome://extensions` et active **Mode développeur** (en haut à droite).
+3. Clique **Charger l'extension non empaquetée** → sélectionne le dossier `HydraFreecker`.
+4. Va sur `https://hydracker.com`, ouvre un titre, clique sur l'icône d'un hébergeur.
+
+L'extension n'a pas de popup ni de page d'options — elle tourne en arrière-plan.
+
+## Comment ça marche
+
+```
+[ Page Hydracker ]
+       │
+       │  utilisateur clique sur icône 1Fichier (ou autre hébergeur)
+       ▼
+[ interceptor.js  (MAIN world, document_start) ]
+       │  hook  window.fetch  +  XMLHttpRequest
+       │  matche  GET /api/v1/content/liens/{id}
+       │  capture title_id depuis /api/v1/titles/{title_id}/content/liens
+       │  abort de la requête originale, postMessage → ISOLATED world
+       ▼
+[ content.js  (ISOLATED world) ]
+       │  ouvre modal custom (état loading)
+       │  tue aussi le dialog "Téléchargement Premium" d'Hydracker
+       │  chrome.runtime.sendMessage → background
+       ▼
+[ background.js  (service worker) ]
+       │  fetch  https://api.movix.tax/api/darkiworld/decode/{lienId}?title_id={titleId}
+       │  declarativeNetRequest pose  Referer: https://movix.tax/
+       │                              Origin:  https://movix.tax
+       │  retourne le JSON parsé
+       ▼
+[ content.js render ]
+       │  nom fichier, pill qualité, drapeaux langues, taille, badge hébergeur,
+       │  boutons copier/ouvrir/télécharger, grid métadonnées, inspecteur JSON
+       ▼
+[ utilisateur clique Télécharger → lien direct ouvert dans nouvel onglet ]
+```
+
+## Structure des fichiers
+
+| Fichier           | Rôle                                                                                  |
+| ----------------- | ------------------------------------------------------------------------------------- |
+| `manifest.json`   | Manifest MV3. Permission : `declarativeNetRequest`. Hôtes : hydracker.com, api.movix.tax. |
+| `rules.json`      | Règle declarativeNetRequest — réécrit `Referer`/`Origin` sur les appels Movix API.    |
+| `interceptor.js`  | Tourne en MAIN world. Patch `fetch` + `XMLHttpRequest` pour intercepter l'endpoint lien Hydracker. |
+| `content.js`      | Tourne en ISOLATED world. UI du modal, watcher du dialog site, pont de messages.      |
+| `background.js`   | Service worker. Effectue le fetch cross-origin vers Movix.                            |
+| `modal.css`       | Modal style shadcn, animations, pills, badges drapeau, icônes.                        |
+| `icons/`          | Icônes extension (16/32/48/128 PNG) + SVG source.                                     |
+
+## Personnalisation
+
+### Ajouter d'autres drapeaux de langues
+
+Édite la map `FLAGS` dans `content.js` :
+
+```js
+const FLAGS = {
+  fr: ['#0055A4', '#FFFFFF', '#EF4135'],
+  // [haut, milieu, bas] couleurs pour un badge 3 bandes
+  xx: ['#color1', '#color2', '#color3'],
+};
+```
+
+Les 2 premières lettres du nom de langue sont superposées sur les bandes — pas de dépendance aux emojis Unicode.
+
+### Changer le endpoint API
+
+Les deux endpoints sont codés en dur à trois endroits :
+
+- Pattern de match dans `interceptor.js` (`LIEN_RE`)
+- Construction d'URL dans `background.js`
+- Condition de réécriture des headers dans `rules.json` (`urlFilter`)
+
+Pour pointer vers un autre backend debrid, modifie les trois.
+
+### Ajuster le modal
+
+`modal.css` expose des variables HSL shadcn en haut de `#movix-modal-root` — modifie couleurs, radii, fonts, durées d'animation là.
+
+## Notes & limitations
+
+- **`AbortError` dans la console** — Hydracker peut logger le fetch annulé. Sans conséquence.
+- **DirectDL parfois absent** — pour certains liens l'API Movix retourne l'URL hébergeur d'origine (`embed_url.lien`) plutôt qu'un lien direct débridé. Le modal affiche l'URL disponible.
+- **`title_id` best-effort** — récupéré depuis le dernier fetch `/api/v1/titles/{id}/content/liens`, fallback sur l'URL de la page. Si rien matche, le paramètre est omis dans la requête Movix.
+
+## Licence
+
+[MIT](LICENSE). À tes risques — dépend de l'API tierce Movix et de la structure actuelle des pages Hydracker ; les deux peuvent changer.
