@@ -6,7 +6,7 @@
 
 # HydraFreecker
 
-<img src="icons/128.png" alt="HydraFreecker" width="96" align="right">
+<img src="chrome/icons/128.png" alt="HydraFreecker" width="96" align="right">
 
 > **Hydracker, jailbroken.** One click. Direct link. Zero crappy popup.
 
@@ -143,3 +143,17 @@ To point at a different debrid backend, update all three.
 ## License
 
 [MIT](LICENSE). Use at your own risk — this depends on the third-party Movix API and on Hydracker's current page structure; both can change.
+
+---
+
+## Star History
+
+<a href="https://star-history.com/#MysticSaba-max/HydraFreecker&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=MysticSaba-max/HydraFreecker&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=MysticSaba-max/HydraFreecker&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=MysticSaba-max/HydraFreecker&type=Date" />
+  </picture>
+</a>
+
+If this helped you, drop a ⭐ on [github.com/MysticSaba-max/HydraFreecker](https://github.com/MysticSaba-max/HydraFreecker) — it helps the project get noticed.

@@ -6,7 +6,7 @@
 
 # HydraFreecker
 
-<img src="icons/128.png" alt="HydraFreecker" width="96" align="right">
+<img src="chrome/icons/128.png" alt="HydraFreecker" width="96" align="right">
 
 > **Hydracker, débridé.** Un clic. Un lien direct. Zéro popup pourri.
 
@@ -143,3 +143,17 @@ Pour pointer vers un autre backend debrid, modifie les trois.
 ## Licence
 
 [MIT](LICENSE). À tes risques — dépend de l'API tierce Movix et de la structure actuelle des pages Hydracker ; les deux peuvent changer.
+
+---
+
+## Star History
+
+<a href="https://star-history.com/#MysticSaba-max/HydraFreecker&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=MysticSaba-max/HydraFreecker&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=MysticSaba-max/HydraFreecker&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=MysticSaba-max/HydraFreecker&type=Date" />
+  </picture>
+</a>
+
+Si le projet t'a servi, lâche une ⭐ sur [github.com/MysticSaba-max/HydraFreecker](https://github.com/MysticSaba-max/HydraFreecker) — ça aide à le faire connaître.
