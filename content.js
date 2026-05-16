@@ -295,12 +295,6 @@
               ? `<img src="${escapeAttr(hostIcon)}" alt="" class="movix-host-icon" referrerpolicy="no-referrer">`
               : ''
           }${escapeHtml(hostName)}</span>`
-        : '',
-      data.source
-        ? `<span class="movix-pill movix-pill-soft">source : ${escapeHtml(data.source)}</span>`
-        : '',
-      data.provider
-        ? `<span class="movix-pill movix-pill-soft">provider : ${escapeHtml(data.provider)}</span>`
         : ''
     ]
       .filter(Boolean)
