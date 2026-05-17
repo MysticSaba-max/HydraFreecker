@@ -1,0 +1,55 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body.movix-themed {
+  width: 380px;
+  background: var(--mx-background);
+  color: var(--mx-foreground);
+  font-size: 13px;
+}
+
+.hf-popup {
+  padding: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.hf-popup-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.125rem 0.125rem 0.5rem;
+  border-bottom: 1px solid var(--mx-border);
+}
+
+.hf-popup-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--mx-foreground);
+}
+
+.hf-popup-subtitle {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--mx-muted-fg);
+}
+
+.hf-popup-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  max-height: 520px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0 -0.125rem;
+  padding: 0 0.125rem;
+}

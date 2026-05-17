@@ -8,7 +8,7 @@
 
 <img src="chrome/icons/128.png" alt="HydraFreecker" width="96" align="right">
 
-> **Hydracker, débridé.** Un clic. Un lien direct. Zéro popup pourri.
+> **Hydracker, résolu.** Un clic. Un lien direct. Zéro popup pourri.
 
 Extension Chrome qui intercepte le bouton de téléchargement premium d'Hydracker et résout le lien via l'API Movix à la place. Plug-and-play : même clic, backend différent, modal custom.
 
@@ -128,7 +128,7 @@ Les deux endpoints sont codés en dur à trois endroits :
 - Construction d'URL dans `background.js`
 - Condition de réécriture des headers dans `rules.json` (`urlFilter`)
 
-Pour pointer vers un autre backend debrid, modifie les trois.
+Pour pointer vers un autre backend résolveur, modifie les trois.
 
 ### Ajuster le modal
 
@@ -137,7 +137,7 @@ Pour pointer vers un autre backend debrid, modifie les trois.
 ## Notes & limitations
 
 - **`AbortError` dans la console** — Hydracker peut logger le fetch annulé. Sans conséquence.
-- **DirectDL parfois absent** — pour certains liens l'API Movix retourne l'URL hébergeur d'origine (`embed_url.lien`) plutôt qu'un lien direct débridé. Le modal affiche l'URL disponible.
+- **DirectDL parfois absent** — pour certains liens l'API Movix retourne l'URL hébergeur d'origine (`embed_url.lien`) plutôt qu'un lien direct résolu. Le modal affiche l'URL disponible.
 - **`title_id` best-effort** — récupéré depuis le dernier fetch `/api/v1/titles/{id}/content/liens`, fallback sur l'URL de la page. Si rien matche, le paramètre est omis dans la requête Movix.
 
 ## Licence

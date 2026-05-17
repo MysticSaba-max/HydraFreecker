@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HydraFreecker</title>
+    <link rel="stylesheet" href="modal.css" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body class="movix-themed">
+    <div class="hf-popup">
+      <header class="hf-popup-header">
+        <h1 class="hf-popup-title">
+          <span class="movix-logo">HF</span>
+          <span>HydraFreecker</span>
+        </h1>
+        <p class="hf-popup-subtitle">Tableau de bord · stats &amp; Hydra Slayer</p>
+      </header>
+      <main id="hf-popup-body" class="hf-popup-body">
+        <div class="movix-loading">
+          <div class="movix-spinner" aria-hidden="true"></div>
+          <div>
+            <div class="movix-loading-title">Chargement…</div>
+            <div class="movix-meta">Lecture des stats locales</div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script src="stats.js"></script>
+    <script src="menu-ui.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

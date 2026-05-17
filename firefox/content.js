@@ -1,5 +1,38 @@
 (() => {
   const MODAL_ID = 'movix-modal-root';
+  const MENU_ID = 'hf-menu-root';
+  const FAB_ID = 'hf-fab';
+
+  let hydraSlayerEnabled = true;
+  let extensionEnabled = true;
+
+  function postExtensionConfig(enabled) {
+    try {
+      window.postMessage(
+        { source: 'hf-config', type: 'extension', enabled: !!enabled },
+        '*'
+      );
+    } catch (_) {}
+  }
+
+  async function initPrefs() {
+    if (!window.HFStats) return;
+    try {
+      const s = await window.HFStats.get();
+      hydraSlayerEnabled = s.prefs.hydraSlayerEnabled !== false;
+      extensionEnabled = s.prefs.extensionEnabled !== false;
+      postExtensionConfig(extensionEnabled);
+      window.HFStats.onChange((next) => {
+        hydraSlayerEnabled = next.prefs.hydraSlayerEnabled !== false;
+        const nextExt = next.prefs.extensionEnabled !== false;
+        if (nextExt !== extensionEnabled) {
+          extensionEnabled = nextExt;
+          postExtensionConfig(extensionEnabled);
+        }
+      });
+    } catch (_) {}
+  }
+  initPrefs();
 
   const ICONS = {
     copy:
@@ -33,10 +66,10 @@
     'Download'
   ];
 
-  let siteDialogObserver = null;
-
   function isHydrackerDialog(el) {
-    if (!el || el.id === MODAL_ID || el.closest('#' + MODAL_ID)) return false;
+    if (!el) return false;
+    if (el.id === MODAL_ID || el.id === MENU_ID) return false;
+    if (el.closest('#' + MODAL_ID) || el.closest('#' + MENU_ID)) return false;
     const cls = typeof el.className === 'string' ? el.className : '';
     if (/(?:max-w-dialog|max-h-dialog|be-dialog)/.test(cls)) return true;
     if (el.matches('[class*="max-w-dialog"], [class*="max-h-dialog"]')) return true;
@@ -47,58 +80,128 @@
     return false;
   }
 
-  function killSiteDialog(root = document) {
-    const dialogs = root.querySelectorAll('[role="dialog"]');
-    dialogs.forEach((d) => {
-      if (!isHydrackerDialog(d)) return;
-      const overlay =
-        d.closest('.fixed.inset-0') ||
-        d.closest('[class*="z-modal"]') ||
-        d.closest('[role="presentation"]') ||
-        d;
-      if (
-        !overlay ||
-        overlay === document.body ||
-        overlay === document.documentElement ||
-        overlay.tagName === 'BODY' ||
-        overlay.tagName === 'HTML'
-      ) {
-        d.remove();
-        return;
-      }
-      overlay.remove();
-    });
+  const closedSiteDialogs = new WeakSet();
+  const hiddenSiteOverlays = new WeakSet();
+
+  function restoreBodyLocks() {
+    for (const el of [document.body, document.documentElement]) {
+      if (!el) continue;
+      el.style.removeProperty('pointer-events');
+      el.style.removeProperty('overflow');
+      el.style.removeProperty('padding-right');
+      el.removeAttribute('data-scroll-locked');
+      el.removeAttribute('aria-hidden');
+      el.removeAttribute('inert');
+    }
   }
 
-  function startSiteDialogWatcher() {
-    killSiteDialog();
-    if (siteDialogObserver) return;
-    siteDialogObserver = new MutationObserver((muts) => {
-      for (const m of muts) {
-        m.addedNodes.forEach((n) => {
-          if (!(n instanceof Element)) return;
-          if (n.id === MODAL_ID) return;
-          if (
-            n.matches?.('[role="dialog"]') ||
-            n.querySelector?.('[role="dialog"]')
-          ) {
-            killSiteDialog(n.parentNode || document);
-          }
-        });
+  function findSiteCloseButton(d) {
+    const direct = d.querySelector(
+      'button[aria-label*="Dismiss" i], button[aria-label*="Fermer" i], button[aria-label*="Close" i], [data-dismiss]'
+    );
+    if (direct) return direct;
+    // Fallback: footer button whose text is "Fermer"/"Close"/"Dismiss".
+    const buttons = d.querySelectorAll('button');
+    for (const b of buttons) {
+      const txt = (b.textContent || '').trim();
+      if (/^(Fermer|Close|Dismiss|Annuler|Cancel)$/i.test(txt)) return b;
+    }
+    return null;
+  }
+
+  function findSiteOverlay(d) {
+    // Outermost wrapper of Hydracker's modal. `.z-modal` is the Tailwind
+    // utility used only by site modals; fall back to other common patterns.
+    return (
+      d.closest('[class~="z-modal"]') ||
+      d.closest('.fixed.inset-0') ||
+      d.closest('[role="presentation"]') ||
+      null
+    );
+  }
+
+  function hideSiteOverlay(overlay) {
+    if (!overlay || hiddenSiteOverlays.has(overlay)) return;
+    if (
+      overlay === document.body ||
+      overlay === document.documentElement ||
+      overlay.tagName === 'BODY' ||
+      overlay.tagName === 'HTML'
+    ) return;
+    hiddenSiteOverlays.add(overlay);
+    // Use visibility:hidden + opacity:0 instead of display:none.
+    // display:none breaks getBoundingClientRect → framer-motion exit animation
+    // never completes → onfinish never fires → React never calls removeChild
+    // → Hydracker dialog nodes accumulate forever in the DOM, eventually
+    // filling Hydracker's internal modal queue and blocking new fetches.
+    try {
+      overlay.style.setProperty('visibility', 'hidden', 'important');
+      overlay.style.setProperty('opacity', '0', 'important');
+      overlay.style.setProperty('pointer-events', 'none', 'important');
+    } catch (_) {}
+  }
+
+  function killSiteDialog(root = document) {
+    // Two-pronged:
+    // 1. CSS-hide the overlay immediately (visibility:hidden, not display:none)
+    // 2. Trigger Hydracker's own close button via setTimeout — deferred out of
+    //    the MutationObserver callback so React's setState doesn't race with
+    //    our modal mount. Without this, Hydracker's modal queue fills up after
+    //    ~4 clicks and new clicks never trigger a fetch, so our modal stops
+    //    appearing entirely.
+    if (!extensionEnabled || !hydraSlayerEnabled) return;
+    const dialogs = root.querySelectorAll('[role="dialog"]');
+    let actualKills = 0;
+    dialogs.forEach((d) => {
+      if (!isHydrackerDialog(d)) return;
+      const overlay = findSiteOverlay(d);
+      if (overlay) hideSiteOverlay(overlay);
+      if (closedSiteDialogs.has(d)) return;
+      closedSiteDialogs.add(d);
+      actualKills += 1;
+      const closeBtn = findSiteCloseButton(d);
+      if (closeBtn) {
+        setTimeout(() => {
+          try { closeBtn.click(); } catch (_) {}
+        }, 300);
       }
     });
-    siteDialogObserver.observe(document.documentElement, {
+    restoreBodyLocks();
+    if (actualKills > 0 && window.HFStats) {
+      for (let i = 0; i < actualKills; i++) window.HFStats.incrementHydraCut();
+      playSlashAnim();
+    }
+  }
+
+  // Permanent observer — runs from content script load, not gated on our
+  // modal state. Closes the race window between Hydracker mounting its
+  // dialog and our handleDebrid attaching anything.
+  const permanentSiteObserver = new MutationObserver((muts) => {
+    for (const m of muts) {
+      m.addedNodes.forEach((n) => {
+        if (!(n instanceof Element)) return;
+        if (n.id === MODAL_ID || n.id === MENU_ID || n.id === FAB_ID) return;
+        if (n.closest?.('#' + MODAL_ID) || n.closest?.('#' + MENU_ID)) return;
+        if (
+          n.matches?.('[role="dialog"]') ||
+          n.querySelector?.('[role="dialog"]')
+        ) {
+          killSiteDialog(n.parentNode || document);
+        }
+      });
+    }
+  });
+  if (document.documentElement) {
+    permanentSiteObserver.observe(document.documentElement, {
       childList: true,
       subtree: true
     });
   }
-
-  function stopSiteDialogWatcher() {
-    if (siteDialogObserver) {
-      siteDialogObserver.disconnect();
-      siteDialogObserver = null;
-    }
+  // Legacy entry points kept as no-ops so existing call sites still work.
+  function startSiteDialogWatcher() {
+    killSiteDialog();
   }
+  function stopSiteDialogWatcher() {}
 
   window.addEventListener('message', (e) => {
     if (e.source !== window) return;
@@ -108,8 +211,9 @@
   });
 
   async function handleDebrid(lienId, titleId) {
-    startSiteDialogWatcher();
+    if (!extensionEnabled) return;
     const modal = openModal();
+    startSiteDialogWatcher();
     setLoading(modal, lienId, titleId);
     try {
       const resp = await chrome.runtime.sendMessage({
@@ -143,10 +247,12 @@
     closeModalImmediate();
     const root = document.createElement('div');
     root.id = MODAL_ID;
+    root.className = 'movix-themed';
     root.setAttribute('data-state', 'open');
+    root.setAttribute('translate', 'no');
     root.innerHTML = `
-      <div class="movix-overlay" data-state="open"></div>
-      <div class="movix-content" data-state="open" role="dialog" aria-modal="true" aria-labelledby="movix-title" aria-describedby="movix-desc" tabindex="-1">
+      <div class="movix-overlay" data-movix="true" data-state="open"></div>
+      <div class="movix-content" data-movix="true" data-state="open" role="dialog" aria-modal="true" aria-labelledby="movix-title" aria-describedby="movix-desc" tabindex="-1">
         <div class="movix-content-header">
           <h2 id="movix-title" class="movix-content-title">
             <span class="movix-logo">HF</span>
@@ -166,6 +272,7 @@
       </div>
     `;
     document.documentElement.appendChild(root);
+    document.documentElement.setAttribute('data-movix-active', 'true');
 
     const close = () => closeModal();
     root.querySelector('.movix-overlay').addEventListener('click', close);
@@ -196,12 +303,14 @@
       existing.remove();
     }
     stopSiteDialogWatcher();
+    document.documentElement.removeAttribute('data-movix-active');
   }
 
   function closeModal() {
     const existing = document.getElementById(MODAL_ID);
     if (!existing) {
       stopSiteDialogWatcher();
+      document.documentElement.removeAttribute('data-movix-active');
       return;
     }
     if (existing._escListener) document.removeEventListener('keydown', existing._escListener);
@@ -210,6 +319,7 @@
     setTimeout(() => {
       if (existing.isConnected) existing.remove();
       stopSiteDialogWatcher();
+      document.documentElement.removeAttribute('data-movix-active');
     }, 210);
   }
 
@@ -237,6 +347,17 @@
       </div>
       ${ctx ? renderContextBlock(ctx) : ''}
     `;
+    if (window.HFStats) {
+      window.HFStats.incrementFail();
+      window.HFStats.pushHistory({
+        filename: '',
+        host: '',
+        hostIcon: '',
+        url: '',
+        lienId: ctx && ctx.lienId != null ? String(ctx.lienId) : '',
+        success: false
+      });
+    }
   }
 
   function renderResult(root, data, ctx) {
@@ -244,12 +365,23 @@
     if (data.success === false) {
       body.innerHTML = `
         <div class="movix-alert movix-alert-error">
-          <div class="movix-alert-title">${escapeHtml(data.error || 'Échec du débridage')}</div>
+          <div class="movix-alert-title">${escapeHtml(data.error || 'Échec de résolution')}</div>
           ${data.debug ? `<div class="movix-alert-msg">debug : <code>${escapeHtml(data.debug)}</code></div>` : ''}
         </div>
         ${renderRawDetails(data, ctx)}
       `;
       wireRawDetails(body);
+      if (window.HFStats) {
+        window.HFStats.incrementFail();
+        window.HFStats.pushHistory({
+          filename: '',
+          host: '',
+          hostIcon: '',
+          url: '',
+          lienId: ctx && ctx.lienId != null ? String(ctx.lienId) : '',
+          success: false
+        });
+      }
       return;
     }
 
@@ -344,7 +476,7 @@
 
     const alertHtml = isDebrided
       ? `<div class="movix-alert movix-alert-success">
-          <div class="movix-alert-title">${icon('check', { size: 14 })} Débridage réussi</div>
+          <div class="movix-alert-title">${icon('check', { size: 14 })} Résolution réussie</div>
           <div class="movix-alert-msg">Le lien direct ci-dessous expire après un court laps de temps.</div>
         </div>`
       : '';
@@ -393,6 +525,19 @@
       })
     );
     wireRawDetails(body);
+
+    if (window.HFStats) {
+      const hostInfo = hostName ? { name: hostName, icon: hostIcon || '' } : null;
+      window.HFStats.incrementSuccess(hostInfo);
+      window.HFStats.pushHistory({
+        filename: fileName,
+        host: hostName || '',
+        hostIcon: hostIcon || '',
+        url: directUrl,
+        lienId: ctx && ctx.lienId != null ? String(ctx.lienId) : '',
+        success: true
+      });
+    }
   }
 
   const FLAGS = {
@@ -584,4 +729,130 @@
   function escapeAttr(s) {
     return escapeHtml(s);
   }
+
+  function playSlashAnim() {
+    if (!document.documentElement || document.querySelector('.hf-slash')) return;
+    const el = document.createElement('div');
+    el.className = 'hf-slash';
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML =
+      '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><line x1="14" y1="86" x2="86" y2="14"/></svg>';
+    document.documentElement.appendChild(el);
+    setTimeout(() => {
+      if (el.isConnected) el.remove();
+    }, 720);
+  }
+
+  function ensureFab() {
+    if (document.getElementById(FAB_ID)) return;
+    if (!document.body) {
+      document.addEventListener('DOMContentLoaded', ensureFab, { once: true });
+      return;
+    }
+    const btn = document.createElement('button');
+    btn.id = FAB_ID;
+    btn.type = 'button';
+    btn.setAttribute('aria-label', 'Ouvrir HydraFreecker');
+    btn.setAttribute('title', 'HydraFreecker — stats & paramètres');
+    btn.textContent = 'HF';
+    btn.addEventListener('click', openMenuModal);
+    document.body.appendChild(btn);
+  }
+
+  function openMenuModal() {
+    closeMenuModalImmediate();
+    const root = document.createElement('div');
+    root.id = MENU_ID;
+    root.className = 'movix-themed';
+    root.setAttribute('data-state', 'open');
+    root.setAttribute('translate', 'no');
+    root.innerHTML = `
+      <div class="movix-overlay" data-movix="true" data-state="open"></div>
+      <div class="movix-content" data-movix="true" data-state="open" role="dialog" aria-modal="true" aria-labelledby="hf-menu-title" aria-describedby="hf-menu-desc" tabindex="-1">
+        <div class="movix-content-header">
+          <h2 id="hf-menu-title" class="movix-content-title">
+            <span class="movix-logo">HF</span>
+            Tableau de bord
+          </h2>
+          <p id="hf-menu-desc" class="movix-content-description">Stats locales · Hydra Slayer · à propos.</p>
+        </div>
+        <div class="movix-body" id="hf-menu-body"></div>
+        <div class="movix-content-footer">
+          <button type="button" class="movix-btn movix-btn-ghost movix-btn-close">Fermer</button>
+        </div>
+        <button type="button" class="movix-content-close" aria-label="Fermer">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+          </svg>
+        </button>
+      </div>
+    `;
+    document.documentElement.appendChild(root);
+    document.documentElement.setAttribute('data-hf-menu-active', 'true');
+
+    const close = () => closeMenuModal();
+    root.querySelector('.movix-overlay').addEventListener('click', close);
+    root.querySelector('.movix-content-close').addEventListener('click', close);
+    root.querySelector('.movix-btn-close').addEventListener('click', close);
+
+    function escListener(e) {
+      if (e.key === 'Escape') close();
+    }
+    document.addEventListener('keydown', escListener);
+    root._escListener = escListener;
+    root._unsubscribe = null;
+
+    requestAnimationFrame(() => {
+      const content = root.querySelector('.movix-content');
+      if (content) content.focus();
+    });
+
+    if (window.HFMenu) {
+      let version = '1.1.0';
+      try {
+        const mf = chrome.runtime.getManifest && chrome.runtime.getManifest();
+        if (mf && mf.version) version = mf.version;
+      } catch (_) {}
+      window.HFMenu.attach(root.querySelector('#hf-menu-body'), {
+        version,
+        onUnsubscribe: (fn) => {
+          root._unsubscribe = fn;
+        }
+      });
+    }
+  }
+
+  function closeMenuModalImmediate() {
+    const existing = document.getElementById(MENU_ID);
+    if (!existing) {
+      document.documentElement.removeAttribute('data-hf-menu-active');
+      return;
+    }
+    if (existing._escListener) document.removeEventListener('keydown', existing._escListener);
+    if (typeof existing._unsubscribe === 'function') {
+      try { existing._unsubscribe(); } catch (_) {}
+    }
+    existing.remove();
+    document.documentElement.removeAttribute('data-hf-menu-active');
+  }
+
+  function closeMenuModal() {
+    const existing = document.getElementById(MENU_ID);
+    if (!existing) {
+      document.documentElement.removeAttribute('data-hf-menu-active');
+      return;
+    }
+    if (existing._escListener) document.removeEventListener('keydown', existing._escListener);
+    if (typeof existing._unsubscribe === 'function') {
+      try { existing._unsubscribe(); } catch (_) {}
+    }
+    existing.setAttribute('data-state', 'closed');
+    existing.querySelectorAll('[data-state]').forEach((el) => el.setAttribute('data-state', 'closed'));
+    setTimeout(() => {
+      if (existing.isConnected) existing.remove();
+      document.documentElement.removeAttribute('data-hf-menu-active');
+    }, 210);
+  }
+
+  ensureFab();
 })();

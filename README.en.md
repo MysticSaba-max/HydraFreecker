@@ -128,7 +128,7 @@ Both endpoints are hard-coded in three places:
 - URL build in `background.js`
 - Header rewrite condition in `rules.json` (`urlFilter`)
 
-To point at a different debrid backend, update all three.
+To point at a different resolver backend, update all three.
 
 ### Adjust the modal
 
@@ -137,7 +137,7 @@ To point at a different debrid backend, update all three.
 ## Notes & caveats
 
 - **`AbortError` in console** — Hydracker may log the aborted fetch. Harmless.
-- **Direct DL may be absent** — for some links the Movix API returns the original host URL (`embed_url.lien`) rather than a debrided direct download. The modal will surface whatever URL is available.
+- **Direct DL may be absent** — for some links the Movix API returns the original host URL (`embed_url.lien`) rather than a resolved direct download. The modal will surface whatever URL is available.
 - **`title_id` is best-effort** — pulled from the most recent `/api/v1/titles/{id}/content/liens` fetch, falling back to the page URL pattern. If neither matches, the parameter is omitted from the Movix request.
 
 ## License
