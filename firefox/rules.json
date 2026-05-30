@@ -5,12 +5,12 @@
     "action": {
       "type": "modifyHeaders",
       "requestHeaders": [
-        { "header": "Referer", "operation": "set", "value": "https://movix.tax/" },
-        { "header": "Origin", "operation": "set", "value": "https://movix.tax" }
+        { "header": "Referer", "operation": "set", "value": "https://movix.cloud/" },
+        { "header": "Origin", "operation": "set", "value": "https://movix.cloud" }
       ]
     },
     "condition": {
-      "urlFilter": "||api.movix.tax/api/darkiworld/decode/",
+      "urlFilter": "||api.movix.cloud/api/darkiworld/decode/",
       "resourceTypes": ["xmlhttprequest"]
     }
   }

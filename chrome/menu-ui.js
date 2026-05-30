@@ -197,7 +197,7 @@
         <div class="hf-toggle-row">
           <div class="hf-toggle-text">
             <div class="hf-toggle-label">Activer HydraFreecker</div>
-            <div class="hf-toggle-desc">Quand désactivé : aucun appel à api.movix.tax, aucune coupe de dialog. Hydracker reprend sa résolution native.</div>
+            <div class="hf-toggle-desc">Quand désactivé : aucun appel à api.movix.cloud, aucune coupe de dialog. Hydracker reprend sa résolution native.</div>
           </div>
           <label class="hf-switch hf-switch-power" aria-label="Activer HydraFreecker">
             <input type="checkbox" id="hf-extension-toggle" ${enabled ? 'checked' : ''} />

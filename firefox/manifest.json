@@ -18,7 +18,7 @@
   "permissions": ["declarativeNetRequest", "declarativeNetRequestWithHostAccess", "storage"],
   "host_permissions": [
     "https://hydracker.com/*",
-    "https://api.movix.tax/*"
+    "https://api.movix.cloud/*"
   ],
   "action": {
     "default_popup": "popup.html",

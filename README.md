@@ -12,7 +12,7 @@
 
 Extension Chrome qui intercepte le bouton de téléchargement premium d'Hydracker et résout le lien via l'API Movix à la place. Plug-and-play : même clic, backend différent, modal custom.
 
-Remplace la requête `https://hydracker.com/api/v1/content/liens/{id}` par `https://api.movix.tax/api/darkiworld/decode/{id}?title_id={titleId}`, spoofe `Referer`/`Origin` vers `https://movix.tax`, puis affiche un modal custom avec la réponse.
+Remplace la requête `https://hydracker.com/api/v1/content/liens/{id}` par `https://api.movix.cloud/api/darkiworld/decode/{id}?title_id={titleId}`, spoofe `Referer`/`Origin` vers `https://movix.cloud`, puis affiche un modal custom avec la réponse.
 
 ---
 
@@ -69,9 +69,9 @@ L'extension n'a pas de popup ni de page d'options — elle tourne en arrière-pl
        │  chrome.runtime.sendMessage → background
        ▼
 [ background.js  (service worker) ]
-       │  fetch  https://api.movix.tax/api/darkiworld/decode/{lienId}?title_id={titleId}
-       │  declarativeNetRequest pose  Referer: https://movix.tax/
-       │                              Origin:  https://movix.tax
+       │  fetch  https://api.movix.cloud/api/darkiworld/decode/{lienId}?title_id={titleId}
+       │  declarativeNetRequest pose  Referer: https://movix.cloud/
+       │                              Origin:  https://movix.cloud
        │  retourne le JSON parsé
        ▼
 [ content.js render ]

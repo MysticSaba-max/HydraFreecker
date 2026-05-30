@@ -1,7 +1,7 @@
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg || msg.type !== 'movix:fetch') return;
   const { lienId, titleId } = msg;
-  let url = `https://api.movix.tax/api/darkiworld/decode/${encodeURIComponent(lienId)}`;
+  let url = `https://api.movix.cloud/api/darkiworld/decode/${encodeURIComponent(lienId)}`;
   if (titleId) url += `?title_id=${encodeURIComponent(titleId)}`;
 
   fetch(url, {

@@ -258,7 +258,7 @@
             <span class="movix-logo">HF</span>
             HydraFreecker
           </h2>
-          <p id="movix-desc" class="movix-content-description">Lien direct récupéré via api.movix.tax — Propulsé par l'API Movix.</p>
+          <p id="movix-desc" class="movix-content-description">Lien direct récupéré via api.movix.cloud — Propulsé par l'API Movix.</p>
         </div>
         <div class="movix-body"></div>
         <div class="movix-content-footer">
