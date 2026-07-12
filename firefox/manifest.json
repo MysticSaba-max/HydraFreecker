@@ -16,25 +16,7 @@
     }
   },
   "permissions": ["declarativeNetRequest", "declarativeNetRequestWithHostAccess", "storage"],
-  "host_permissions": [
-    "https://hydracker.com/*",
-    "https://movix.online/*",
-    "https://*.movix.online/*",
-    "https://*.movix.date/*",
-    "https://*.movix.chat/*",
-    "https://*.movix.golf/*",
-    "https://*.movix.cloud/*",
-    "https://*.movix.cash/*",
-    "https://*.movix.tax/*",
-    "https://*.movix.health/*",
-    "https://*.movix.help/*",
-    "https://*.movix.llc/*",
-    "https://*.movix.rodeo/*",
-    "https://*.movix.blog/*",
-    "https://*.movix.club/*",
-    "https://*.movix.website/*",
-    "https://*.movix.site/*"
-  ],
+  "host_permissions": ["https://*/*"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "HydraFreecker — Tableau de bord",
