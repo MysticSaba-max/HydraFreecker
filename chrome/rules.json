@@ -5,13 +5,348 @@
     "action": {
       "type": "modifyHeaders",
       "requestHeaders": [
-        { "header": "Referer", "operation": "set", "value": "https://movix.cloud/" },
-        { "header": "Origin", "operation": "set", "value": "https://movix.cloud" }
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://movix.date/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://movix.date"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.movix.date/api/darkiworld/decode/",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://movix.chat/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://movix.chat"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.movix.chat/api/darkiworld/decode/",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 3,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://movix.golf/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://movix.golf"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.movix.golf/api/darkiworld/decode/",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 4,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://movix.cloud/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://movix.cloud"
+        }
       ]
     },
     "condition": {
       "urlFilter": "||api.movix.cloud/api/darkiworld/decode/",
-      "resourceTypes": ["xmlhttprequest"]
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 5,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://movix.cash/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://movix.cash"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.movix.cash/api/darkiworld/decode/",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 6,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://movix.tax/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://movix.tax"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.movix.tax/api/darkiworld/decode/",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 7,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://movix.health/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://movix.health"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.movix.health/api/darkiworld/decode/",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 8,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://movix.help/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://movix.help"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.movix.help/api/darkiworld/decode/",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 9,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://movix.llc/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://movix.llc"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.movix.llc/api/darkiworld/decode/",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 10,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://movix.rodeo/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://movix.rodeo"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.movix.rodeo/api/darkiworld/decode/",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 11,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://movix.blog/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://movix.blog"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.movix.blog/api/darkiworld/decode/",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 12,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://movix.club/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://movix.club"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.movix.club/api/darkiworld/decode/",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 13,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://movix.website/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://movix.website"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.movix.website/api/darkiworld/decode/",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 14,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://movix.site/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://movix.site"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.movix.site/api/darkiworld/decode/",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
     }
   }
 ]

@@ -197,7 +197,7 @@
         <div class="hf-toggle-row">
           <div class="hf-toggle-text">
             <div class="hf-toggle-label">Activer HydraFreecker</div>
-            <div class="hf-toggle-desc">Quand désactivé : aucun appel à api.movix.cloud, aucune coupe de dialog. Hydracker reprend sa résolution native.</div>
+            <div class="hf-toggle-desc">Quand désactivé : aucun appel à l'API Movix, aucune coupe de dialog. Hydracker reprend sa résolution native.</div>
           </div>
           <label class="hf-switch hf-switch-power" aria-label="Activer HydraFreecker">
             <input type="checkbox" id="hf-extension-toggle" ${enabled ? 'checked' : ''} />
@@ -221,6 +221,26 @@
           </div>
           <label class="hf-switch" aria-label="Activer Hydra Slayer">
             <input type="checkbox" id="hf-slayer-toggle" ${enabled ? 'checked' : ''} ${extEnabled ? '' : 'disabled'} />
+            <span class="hf-switch-track"><span class="hf-switch-thumb"></span></span>
+          </label>
+        </div>
+      </section>
+    `;
+  }
+
+  function renderSlashToggle(stats) {
+    const enabled = stats.prefs && stats.prefs.slashAnimEnabled !== false;
+    const extEnabled = stats.prefs && stats.prefs.extensionEnabled !== false;
+    return `
+      <section class="hf-section ${extEnabled ? '' : 'hf-section-disabled'}">
+        <h3 class="hf-section-title">${icon('scissors', { size: 13 })} Animation de coupe</h3>
+        <div class="hf-toggle-row">
+          <div class="hf-toggle-text">
+            <div class="hf-toggle-label">Slash à l'ouverture</div>
+            <div class="hf-toggle-desc">Joue l'animation d'entaille sur la page avant d'ouvrir le lien. Le modal Movix attend la fin de l'animation.</div>
+          </div>
+          <label class="hf-switch" aria-label="Activer l'animation de coupe">
+            <input type="checkbox" id="hf-slash-toggle" ${enabled ? 'checked' : ''} ${extEnabled ? '' : 'disabled'} />
             <span class="hf-switch-track"><span class="hf-switch-thumb"></span></span>
           </label>
         </div>
@@ -260,6 +280,7 @@
       ${renderHistory(stats)}
       ${renderExtensionToggle(stats)}
       ${renderSlayer(stats)}
+      ${renderSlashToggle(stats)}
       ${renderAbout(stats, version)}
     `;
   }
@@ -307,6 +328,14 @@
     if (slayerSection) {
       slayerSection.classList.toggle('hf-section-disabled', !extOn);
     }
+    const slashOn = stats.prefs && stats.prefs.slashAnimEnabled !== false;
+    const slashEl = container.querySelector('#hf-slash-toggle');
+    if (slashEl && slashEl.checked !== slashOn) slashEl.checked = slashOn;
+    if (slashEl) slashEl.disabled = !extOn;
+    const slashSection = slashEl && slashEl.closest('.hf-section');
+    if (slashSection) {
+      slashSection.classList.toggle('hf-section-disabled', !extOn);
+    }
   }
 
   function wire(container, getStats, opts) {
@@ -318,6 +347,14 @@
         const card = container.querySelector('.hf-stat-hydra .hf-scissors-icon');
         if (slayer.checked && card) pulse(card);
         if (opts && opts.onSlayerChange) opts.onSlayerChange(slayer.checked);
+      });
+    }
+
+    const slash = container.querySelector('#hf-slash-toggle');
+    if (slash) {
+      slash.addEventListener('change', async () => {
+        animateSwitch(slash, slash.checked);
+        await window.HFStats.setPref('slashAnimEnabled', slash.checked);
       });
     }
 

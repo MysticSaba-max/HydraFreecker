@@ -5,6 +5,21 @@
 
   let hydraSlayerEnabled = true;
   let extensionEnabled = true;
+  let slashAnimEnabled = true;
+
+  // Kill window: killSiteDialog only acts while a debrid resolution is in flight,
+  // so the permanent observer never nukes unrelated site dialogs (MediaInfo,
+  // notifications). Self-healing — expires on its own and is cleared on close.
+  let debridActiveUntil = 0;
+  let slashPlayingUntil = 0;
+  const DEBRID_WINDOW_MS = 6000;
+  const SLASH_CUT_MS = 560;
+  const SLASH_REVEAL_MS = 640;
+  const SLASH_TOTAL_MS = 900;
+
+  function sleep(ms) {
+    return new Promise((r) => setTimeout(r, ms));
+  }
 
   function postExtensionConfig(enabled) {
     try {
@@ -21,9 +36,11 @@
       const s = await window.HFStats.get();
       hydraSlayerEnabled = s.prefs.hydraSlayerEnabled !== false;
       extensionEnabled = s.prefs.extensionEnabled !== false;
+      slashAnimEnabled = s.prefs.slashAnimEnabled !== false;
       postExtensionConfig(extensionEnabled);
       window.HFStats.onChange((next) => {
         hydraSlayerEnabled = next.prefs.hydraSlayerEnabled !== false;
+        slashAnimEnabled = next.prefs.slashAnimEnabled !== false;
         const nextExt = next.prefs.extensionEnabled !== false;
         if (nextExt !== extensionEnabled) {
           extensionEnabled = nextExt;
@@ -142,34 +159,60 @@
   }
 
   function killSiteDialog(root = document) {
-    // Two-pronged:
-    // 1. CSS-hide the overlay immediately (visibility:hidden, not display:none)
-    // 2. Trigger Hydracker's own close button via setTimeout — deferred out of
-    //    the MutationObserver callback so React's setState doesn't race with
-    //    our modal mount. Without this, Hydracker's modal queue fills up after
-    //    ~4 clicks and new clicks never trigger a fetch, so our modal stops
-    //    appearing entirely.
     if (!extensionEnabled || !hydraSlayerEnabled) return;
+    // Only act while a debrid resolution is in flight (see debridActiveUntil).
+    // The permanent observer runs on every dialog mount; without this gate it
+    // also nukes unrelated site dialogs (MediaInfo, notifications) that share
+    // the loading-skeleton / dialog classes → white bar + MediaInfo never shows.
+    if (Date.now() > debridActiveUntil) return;
     const dialogs = root.querySelectorAll('[role="dialog"]');
-    let actualKills = 0;
+    const fresh = [];
     dialogs.forEach((d) => {
       if (!isHydrackerDialog(d)) return;
       const overlay = findSiteOverlay(d);
-      if (overlay) hideSiteOverlay(overlay);
-      if (closedSiteDialogs.has(d)) return;
-      closedSiteDialogs.add(d);
-      actualKills += 1;
-      const closeBtn = findSiteCloseButton(d);
-      if (closeBtn) {
-        setTimeout(() => {
-          try { closeBtn.click(); } catch (_) {}
-        }, 300);
+      if (closedSiteDialogs.has(d)) {
+        if (overlay) hideSiteOverlay(overlay); // already handled — keep it hidden
+        return;
       }
+      closedSiteDialogs.add(d);
+      fresh.push({ d, overlay });
     });
-    restoreBodyLocks();
-    if (actualKills > 0 && window.HFStats) {
-      for (let i = 0; i < actualKills; i++) window.HFStats.incrementHydraCut();
-      playSlashAnim();
+
+    if (!fresh.length) {
+      restoreBodyLocks();
+      return;
+    }
+
+    if (window.HFStats) {
+      for (let i = 0; i < fresh.length; i++) window.HFStats.incrementHydraCut();
+    }
+
+    // Hide via visibility (not display:none — that breaks framer-motion's exit
+    // and leaks dialog nodes). The close-button click drains Hydracker's modal
+    // queue; it's deferred so React's setState doesn't race our mount.
+    const hide = () => {
+      fresh.forEach(({ overlay }) => {
+        if (overlay) hideSiteOverlay(overlay);
+      });
+      restoreBodyLocks();
+    };
+    const clickClose = () => {
+      fresh.forEach(({ d }) => {
+        const closeBtn = findSiteCloseButton(d);
+        if (closeBtn) {
+          try { closeBtn.click(); } catch (_) {}
+        }
+      });
+    };
+
+    playSlashAnim();
+    if (slashAnimEnabled) {
+      // Keep the dialog on screen while the blade draws across it, then sever it
+      // as the blade lands — so the slash cuts the real dialog, not empty air.
+      setTimeout(() => { hide(); clickClose(); }, SLASH_CUT_MS);
+    } else {
+      hide();
+      setTimeout(clickClose, 300);
     }
   }
 
@@ -212,35 +255,43 @@
 
   async function handleDebrid(lienId, titleId) {
     if (!extensionEnabled) return;
+
+    // Open the kill window so killSiteDialog (and the permanent observer) may act
+    // during this resolution; it auto-expires and is cleared on modal close.
+    debridActiveUntil = Date.now() + DEBRID_WINDOW_MS;
+
+    // Fire the network request now so the slash animation never adds latency.
+    const fetchP = chrome.runtime
+      .sendMessage({ type: 'movix:fetch', lienId, titleId })
+      .catch((err) => ({ error: String((err && err.message) || err) }));
+
+    // Cut Hydracker's dialog now — plays the slash if a cut actually happened.
+    killSiteDialog();
+
+    // Let the slash breathe on the page before revealing our modal.
+    if (Date.now() < slashPlayingUntil) await sleep(SLASH_REVEAL_MS);
+
     const modal = openModal();
-    startSiteDialogWatcher();
     setLoading(modal, lienId, titleId);
-    try {
-      const resp = await chrome.runtime.sendMessage({
-        type: 'movix:fetch',
-        lienId,
-        titleId
-      });
-      if (!resp) {
-        renderError(modal, 'Aucune réponse de l\'extension.', { lienId, titleId });
-        return;
-      }
-      if (resp.error) {
-        renderError(modal, resp.error, { lienId, titleId, status: resp.status });
-        return;
-      }
-      if (!resp.data) {
-        renderError(modal, 'Réponse non JSON (HTTP ' + resp.status + ').', {
-          lienId,
-          titleId,
-          raw: resp.raw
-        });
-        return;
-      }
-      renderResult(modal, resp.data, { lienId, titleId });
-    } catch (err) {
-      renderError(modal, String(err && err.message || err), { lienId, titleId });
+
+    const resp = await fetchP;
+    if (!resp) {
+      renderError(modal, 'Aucune réponse de l\'extension.', { lienId, titleId });
+      return;
     }
+    if (resp.error) {
+      renderError(modal, resp.error, { lienId, titleId, status: resp.status });
+      return;
+    }
+    if (!resp.data) {
+      renderError(modal, 'Réponse non JSON (HTTP ' + resp.status + ').', {
+        lienId,
+        titleId,
+        raw: resp.raw
+      });
+      return;
+    }
+    renderResult(modal, resp.data, { lienId, titleId });
   }
 
   function openModal() {
@@ -258,7 +309,7 @@
             <span class="movix-logo">HF</span>
             HydraFreecker
           </h2>
-          <p id="movix-desc" class="movix-content-description">Lien direct récupéré via api.movix.cloud — Propulsé par l'API Movix.</p>
+          <p id="movix-desc" class="movix-content-description">Lien direct récupéré via l'API Movix.</p>
         </div>
         <div class="movix-body"></div>
         <div class="movix-content-footer">
@@ -307,6 +358,7 @@
   }
 
   function closeModal() {
+    debridActiveUntil = 0;
     const existing = document.getElementById(MODAL_ID);
     if (!existing) {
       stopSiteDialogWatcher();
@@ -730,17 +782,39 @@
     return escapeHtml(s);
   }
 
+  const SCISSORS_SVG =
+    '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<g class="hf-blade hf-blade-top"><line x1="10" y1="12" x2="23" y2="8"/><line x1="10" y1="12" x2="3" y2="9"/><circle cx="2" cy="9" r="1.7"/></g>' +
+    '<g class="hf-blade hf-blade-bot"><line x1="10" y1="12" x2="23" y2="16"/><line x1="10" y1="12" x2="3" y2="15"/><circle cx="2" cy="15" r="1.7"/></g>' +
+    '<circle cx="10" cy="12" r="1.1" fill="currentColor" stroke="none"/>' +
+    '</svg>';
+
   function playSlashAnim() {
+    if (!slashAnimEnabled) return;
     if (!document.documentElement || document.querySelector('.hf-slash')) return;
+    // A swarm of scissors snips across the screen on the diagonal (bottom-left →
+    // top-right). Each gets jitter/rotation/size variance so it reads as many
+    // blades snipping, not a single bar.
+    const N = 11;
+    let inner = '';
+    for (let i = 0; i < N; i++) {
+      const t = i / (N - 1);
+      const perp = Math.sin(i * 1.9) * 7; // scatter across the cut line
+      const left = 12 + t * 76 + perp;
+      const top = 88 - t * 76 + perp;
+      const rot = (-45 + Math.sin(i * 2.3) * 20).toFixed(1); // varied tilt
+      const s = (0.82 + ((i * 37) % 46) / 100).toFixed(2); // varied size 0.82–1.27
+      inner += `<div class="hf-sciss" style="left:${left}%;top:${top}%;--i:${i};--rot:${rot}deg;--s:${s}">${SCISSORS_SVG}</div>`;
+    }
     const el = document.createElement('div');
     el.className = 'hf-slash';
     el.setAttribute('aria-hidden', 'true');
-    el.innerHTML =
-      '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><line x1="14" y1="86" x2="86" y2="14"/></svg>';
+    el.innerHTML = inner;
     document.documentElement.appendChild(el);
+    slashPlayingUntil = Date.now() + SLASH_TOTAL_MS;
     setTimeout(() => {
       if (el.isConnected) el.remove();
-    }, 720);
+    }, SLASH_TOTAL_MS);
   }
 
   function ensureFab() {

@@ -9,7 +9,7 @@
       hydraCut: 0,
       hosts: {},
       history: [],
-      prefs: { hydraSlayerEnabled: true, extensionEnabled: true },
+      prefs: { hydraSlayerEnabled: true, extensionEnabled: true, slashAnimEnabled: true },
       installedAt: Date.now()
     };
   }
